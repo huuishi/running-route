@@ -1,85 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
-
-const routeLibrary = [
-  {
-    id: 'east-coast',
-    name: 'East Coast Boardwalk Loop',
-    location: 'East Coast',
-    distanceKm: 8.5,
-    difficulty: 'Easy',
-    surface: 'Pavement',
-    bestFor: 'Relaxed endurance',
-    description: 'A breezy waterfront loop with calm views, plenty of shade, and easy access to cafes.',
-    highlights: ['Sea breeze', 'Sunset views', 'Waterfront rest stops'],
-  },
-  {
-    id: 'marina-bay',
-    name: 'Marina Bay Skyline Run',
-    location: 'Central',
-    distanceKm: 10,
-    difficulty: 'Moderate',
-    surface: 'Mixed paths',
-    bestFor: 'City energy',
-    description: 'A polished urban route that links Marina Bay, the Esplanade, and photogenic landmarks.',
-    highlights: ['Skyline views', 'Iconic landmarks', 'Night lights'],
-  },
-  {
-    id: 'macritchie',
-    name: 'MacRitchie Reservoir Trail',
-    location: 'Central',
-    distanceKm: 12,
-    difficulty: 'Moderate',
-    surface: 'Trail',
-    bestFor: 'Nature escape',
-    description: 'Shady canopy, rolling terrain, and a calm rhythm make this a favourite for steady runs.',
-    highlights: ['Forest shade', 'Birdsong', 'Hill climbs'],
-  },
-  {
-    id: 'jurong-lake',
-    name: 'Jurong Lake Gardens Loop',
-    location: 'West',
-    distanceKm: 7.5,
-    difficulty: 'Easy',
-    surface: 'Pavement',
-    bestFor: 'Beginner-friendly miles',
-    description: 'Wide paths and a flat loop make this a dependable choice for a relaxed session.',
-    highlights: ['Wide paths', 'Fresh air', 'Easy logistics'],
-  },
-  {
-    id: 'ulu-pandan',
-    name: 'Clementi to Ulu Pandan',
-    location: 'West',
-    distanceKm: 15,
-    difficulty: 'Challenging',
-    surface: 'Pavement',
-    bestFor: 'Long-run build',
-    description: 'A longer route with steady pacing and plenty of room to settle into rhythm.',
-    highlights: ['Quiet streets', 'Long stretch', 'Hydration points'],
-  },
-  {
-    id: 'pulau-ubin',
-    name: 'Pulau Ubin Adventure Run',
-    location: 'North',
-    distanceKm: 13.5,
-    difficulty: 'Challenging',
-    surface: 'Trail',
-    bestFor: 'Adventure',
-    description: 'A rugged island loop with boardwalks, open views, and a more exploratory feel.',
-    highlights: ['Island air', 'Rugged terrain', 'Scenic coast'],
-  },
-  {
-    id: 'gardens-bay',
-    name: 'Gardens by the Bay Loop',
-    location: 'Central',
-    distanceKm: 6.5,
-    difficulty: 'Easy',
-    surface: 'Pavement',
-    bestFor: 'Quick recovery',
-    description: 'A compact and scenic route for a short run before brunch or a workday reset.',
-    highlights: ['Garden views', 'Flat path', 'Fast loop'],
-  },
-]
+import { searchRoutes } from './routeSearch.js'
 
 const paceLabels = {
   easy: 'Easy + relaxed',
@@ -89,49 +10,40 @@ const paceLabels = {
 
 function App() {
   const [location, setLocation] = useState('Any')
-  const [distance, setDistance] = useState(8)
+  const [distance, setDistance] = useState(3)
   const [pace, setPace] = useState('steady')
+  const [appliedFilters, setAppliedFilters] = useState({
+    location: 'Any',
+    distance: 3,
+    pace: 'steady',
+  })
   const [submitted, setSubmitted] = useState(false)
+  const [recommendations, setRecommendations] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [photoSource, setPhotoSource] = useState('')
 
-  const recommendations = useMemo(() => {
-    const targetDistance = Number(distance)
-
-    return routeLibrary
-      .map((route) => {
-        let score = 0
-
-        if (location === 'Any') {
-          score += 18
-        } else if (route.location === location) {
-          score += 35
-        }
-
-        const distanceGap = Math.abs(route.distanceKm - targetDistance)
-        if (distanceGap <= 0.5) {
-          score += 35
-        } else if (distanceGap <= 2) {
-          score += 22
-        } else if (distanceGap <= 4) {
-          score += 10
-        }
-
-        if (pace === 'easy' && route.difficulty === 'Easy') {
-          score += 20
-        } else if (pace === 'steady' && route.difficulty !== 'Challenging') {
-          score += 12
-        } else if (pace === 'challenging' && route.difficulty === 'Challenging') {
-          score += 20
-        }
-
-        return { ...route, score }
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-  }, [distance, location, pace])
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    const filters = { location, distance, pace }
+    setAppliedFilters(filters)
     setSubmitted(true)
+    setLoading(true)
+    setError('')
+
+    const result = await searchRoutes({
+      region: filters.location,
+      distanceKm: filters.distance,
+      pace: filters.pace,
+    })
+
+    setRecommendations(result.routes)
+    setPhotoSource(result.source)
+    setLoading(false)
+
+    if (!result.routes.length) {
+      setError('No routes matched that distance in this area. Try another neighbourhood or distance.')
+    }
   }
 
   return (
@@ -141,11 +53,11 @@ function App() {
           <p className="eyebrow">Singapore • Route Planner</p>
           <h1>Find your next run in the city.</h1>
           <p className="hero-copy">
-            Enter your preferred distance and area, and we will suggest a route that fits your mood,
-            pace, and the best of Singapore’s running landscapes.
+            Enter your preferred distance and area. We pick popular local spots, build routes as close
+            to your target as possible, and show Google Maps photos of each start and end point.
           </p>
         </div>
-        <div className="hero-badge">Strava-style planning, built for local miles</div>
+        <div className="hero-badge">Popular spots • Distance-matched routes</div>
       </header>
 
       <form className="planner-card" onSubmit={handleSubmit}>
@@ -155,7 +67,7 @@ function App() {
             <div className="field-inline">
               <input
                 type="number"
-                min="3"
+                min="2"
                 max="20"
                 step="0.5"
                 value={distance}
@@ -165,7 +77,7 @@ function App() {
             </div>
             <input
               type="range"
-              min="3"
+              min="2"
               max="20"
               step="0.5"
               value={distance}
@@ -194,35 +106,68 @@ function App() {
           </label>
         </div>
 
-        <button type="submit">Recommend my route</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Finding routes…' : 'Recommend my route'}
+        </button>
         <p className="helper-text">
-          {submitted
-            ? `Ready for ${distance} km in ${location === 'Any' ? 'Singapore' : location}.`
-            : 'Pick a distance and neighbourhood to see curated routes.'}
+          {loading
+            ? 'Searching popular locations and matching route distances…'
+            : submitted
+              ? `Ready for ${appliedFilters.distance} km in ${appliedFilters.location === 'Any' ? 'Singapore' : appliedFilters.location}.`
+              : 'Pick a distance and neighbourhood to see curated routes.'}
         </p>
+        {error ? <p className="error-text">{error}</p> : null}
       </form>
 
       <section className="results-section">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Best matches</p>
-            <h2>Recommended loops for {location === 'Any' ? 'Singapore' : location}</h2>
+            <h2>
+              Recommended routes for{' '}
+              {appliedFilters.location === 'Any' ? 'Singapore' : appliedFilters.location}
+            </h2>
           </div>
-          <div className="chip">{distance} km • {paceLabels[pace]}</div>
+          <div className="chip">
+            {appliedFilters.distance} km • {paceLabels[appliedFilters.pace]}
+          </div>
         </div>
+
+        {photoSource ? (
+          <p className="photo-source">
+            {photoSource === 'google-maps'
+              ? 'Start/end photos from Google Maps.'
+              : 'Map previews shown while Google Maps API is unavailable.'}
+          </p>
+        ) : null}
 
         <div className="cards">
           {recommendations.map((route) => (
             <article className="route-card" key={route.id}>
+              <div className="route-photos">
+                <figure>
+                  <img src={route.start.photo_url} alt={`Start: ${route.start.name}`} loading="lazy" />
+                  <figcaption>Start • {route.start.name}</figcaption>
+                </figure>
+                <figure>
+                  <img src={route.end.photo_url} alt={`End: ${route.end.name}`} loading="lazy" />
+                  <figcaption>End • {route.end.name}</figcaption>
+                </figure>
+              </div>
+
               <div className="route-top">
                 <div>
                   <h3>{route.name}</h3>
-                  <p>{route.location}</p>
+                  <p>{route.region}</p>
                 </div>
-                <span className="pill">{route.distanceKm} km</span>
+                <span className="pill">{route.distance_km} km</span>
               </div>
               <p className="route-description">{route.description}</p>
               <ul className="route-meta">
+                <li>
+                  <strong>Route type</strong>
+                  <span>{route.route_type.replace('-', ' ')}</span>
+                </li>
                 <li>
                   <strong>Surface</strong>
                   <span>{route.surface}</span>
@@ -233,7 +178,7 @@ function App() {
                 </li>
                 <li>
                   <strong>Best for</strong>
-                  <span>{route.bestFor}</span>
+                  <span>{route.best_for}</span>
                 </li>
               </ul>
               <div className="highlights">
@@ -250,12 +195,19 @@ function App() {
 
       <section className="insights">
         <article className="insight-card">
-          <h3>Why this works</h3>
-          <p>Routes are ranked by distance fit, area preference, and the pace you want to keep.</p>
+          <h3>How routes are built</h3>
+          <p>
+            We start from popular running locations in your chosen region, then pick loops and
+            out-and-back paths whose distance is closest to your target (for example, 2–4 km when you
+            search for 3 km).
+          </p>
         </article>
         <article className="insight-card">
-          <h3>Built for Singapore</h3>
-          <p>From waterfront loops to shaded urban trails, the list balances iconic routes and local favourites.</p>
+          <h3>Start and end photos</h3>
+          <p>
+            Each suggestion includes map imagery for the start and end points, powered by Google Maps
+            when an API key is configured on the backend.
+          </p>
         </article>
       </section>
     </div>

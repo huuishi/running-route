@@ -1,6 +1,5 @@
 {
   "homepage": "https://huuishi.github.io/running-route",
-  
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
@@ -12,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

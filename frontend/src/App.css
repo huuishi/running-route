@@ -116,6 +116,50 @@
   color: #5a6f67;
 }
 
+.error-text {
+  margin-top: 0.6rem;
+  color: #9b2c2c;
+  font-weight: 600;
+}
+
+.photo-source {
+  margin: 0;
+  color: #5a6f67;
+  font-size: 0.92rem;
+}
+
+.route-photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.route-photos figure {
+  margin: 0;
+}
+
+.route-photos img {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  background: #eef8f1;
+}
+
+.route-photos figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #5a6f67;
+}
+
+.planner-card button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .results-section {
   display: flex;
   flex-direction: column;
