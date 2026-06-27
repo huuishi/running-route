@@ -1,0 +1,255 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.hero-card,
+.planner-card,
+.route-card,
+.insight-card {
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 45px rgba(13, 27, 42, 0.08);
+}
+
+.hero-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #154734 0%, #2c7a5d 100%);
+  color: white;
+}
+
+.hero-content {
+  max-width: 680px;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.hero-card h1 {
+  margin: 0 0 0.7rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: white;
+}
+
+.hero-copy {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.hero-badge {
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 0.93rem;
+  white-space: nowrap;
+}
+
+.planner-card {
+  padding: 1.5rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  text-align: left;
+  font-weight: 600;
+  color: #17332a;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  border: 1px solid #d8e6df;
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+  color: #17332a;
+  background: #f7fbf8;
+  box-sizing: border-box;
+}
+
+.field-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.field-inline input[type='number'] {
+  flex: 1;
+}
+
+.planner-card button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.2rem;
+  font: inherit;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #2f8f6b 0%, #154734 100%);
+  cursor: pointer;
+}
+
+.helper-text {
+  margin-top: 0.8rem;
+  color: #5a6f67;
+}
+
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #17332a;
+}
+
+.chip {
+  padding: 0.75rem 0.95rem;
+  border-radius: 999px;
+  background: #eef8f1;
+  color: #1f5b44;
+  font-weight: 700;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.route-card {
+  padding: 1.2rem;
+  text-align: left;
+}
+
+.route-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.route-top h3 {
+  margin: 0 0 0.25rem;
+  color: #17332a;
+}
+
+.route-top p {
+  margin: 0;
+  color: #5a6f67;
+}
+
+.pill {
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: #f0f7f3;
+  color: #2f8f6b;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.route-description {
+  margin: 0.9rem 0;
+  color: #425b55;
+}
+
+.route-meta {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.route-meta li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #425b55;
+  font-size: 0.94rem;
+}
+
+.route-meta strong {
+  color: #17332a;
+}
+
+.highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: #eef8f1;
+  color: #2f8f6b;
+  font-size: 0.82rem;
+}
+
+.insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.insight-card {
+  padding: 1.2rem;
+  text-align: left;
+}
+
+.insight-card h3 {
+  margin: 0 0 0.55rem;
+  color: #17332a;
+}
+
+.insight-card p {
+  margin: 0;
+  color: #5a6f67;
+}
+
+@media (max-width: 900px) {
+  .field-row,
+  .cards,
+  .insights {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-card,
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
