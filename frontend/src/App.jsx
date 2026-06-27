@@ -581,7 +581,7 @@ function App() {
             <strong>{formatDistance(currentRun?.distanceToStartMeters)}</strong>
           </div>
           <div>
-            <span>Furthest away</span>
+            <span>Distance</span>
             <strong>{formatDistance(currentRun?.furthestFromStartMeters)}</strong>
           </div>
         </div>
