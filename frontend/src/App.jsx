@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { searchRoutes } from './routeSearch.js'
-import { supabase } from './lib/supabase.js'
+import { supabase } from './supabaseClient.js'
 
 const paceLabels = {
   easy: 'Easy + relaxed',
