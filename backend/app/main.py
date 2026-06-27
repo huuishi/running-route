@@ -45,6 +45,9 @@ class RouteResponse(BaseModel):
     route_type: str
     start: RoutePointResponse
     end: RoutePointResponse
+    via: RoutePointResponse | None = None
+    map_url: str
+    directions_url: str
     description: str
     highlights: list[str]
     difficulty: str
@@ -77,6 +80,9 @@ def _serialize_route(route: GeneratedRoute) -> RouteResponse:
         route_type=route.route_type,
         start=_serialize_point(route.start),
         end=_serialize_point(route.end),
+        via=_serialize_point(route.via) if route.via else None,
+        map_url=route.map_url,
+        directions_url=route.directions_url,
         description=route.description,
         highlights=list(route.highlights),
         difficulty=route.difficulty,

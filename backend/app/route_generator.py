@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from app.google_maps import location_photo_url
+from app.google_maps import location_photo_url, route_directions_url, route_map_url
 from app.locations import Location, locations_for_region
 
 ROAD_FACTOR = 1.35
@@ -28,6 +28,9 @@ class GeneratedRoute:
     route_type: str
     start: RoutePoint
     end: RoutePoint
+    via: RoutePoint | None
+    map_url: str
+    directions_url: str
     description: str
     highlights: tuple[str, ...]
     difficulty: str
@@ -74,6 +77,29 @@ def _score_candidate(distance_km: float, target_km: float, min_km: float, max_km
     return -abs(distance_km - target_km)
 
 
+def _route_urls(
+    start: RoutePoint,
+    end: RoutePoint,
+    *,
+    route_type: str,
+    via: RoutePoint | None = None,
+) -> tuple[str, str]:
+    via_lat = via.lat if via else None
+    via_lng = via.lng if via else None
+    return (
+        route_map_url(start.lat, start.lng, end.lat, end.lng, route_type=route_type, via_lat=via_lat, via_lng=via_lng),
+        route_directions_url(
+            start.lat,
+            start.lng,
+            end.lat,
+            end.lng,
+            route_type=route_type,
+            via_lat=via_lat,
+            via_lng=via_lng,
+        ),
+    )
+
+
 def generate_routes(
     region: str,
     target_km: float,
@@ -98,23 +124,32 @@ def generate_routes(
             direct_km = haversine_km(start.lat, start.lng, end.lat, end.lng) * ROAD_FACTOR
             end_point = _point(end)
 
-            for route_type, distance_km, name, description in (
+            for route_type, distance_km, name, description, via_point in (
                 (
                     "out-and-back",
                     direct_km * 2,
                     f"{start.name} out-and-back",
-                    f"Run from {start.name} toward {end.name} and return for a balanced out and back.",
+                    f"Run from {start.name} toward {end.name} and return for a balanced out-and-back.",
+                    end_point,
                 ),
                 (
                     "point-to-point",
                     direct_km,
                     f"{start.name} to {end.name}",
                     f"A direct point-to-point linking two popular spots in {start.region}.",
+                    None,
                 ),
             ):
                 score = _score_candidate(distance_km, target_km, min_km, max_km)
                 if score is None:
                     continue
+
+                map_url, directions_url = _route_urls(
+                    start_point,
+                    end_point if route_type == "point-to-point" else start_point,
+                    route_type=route_type,
+                    via=via_point,
+                )
 
                 route = GeneratedRoute(
                     id=f"{start.id}-{end.id}-{route_type}",
@@ -124,6 +159,9 @@ def generate_routes(
                     route_type=route_type,
                     start=start_point,
                     end=end_point if route_type == "point-to-point" else start_point,
+                    via=via_point,
+                    map_url=map_url,
+                    directions_url=directions_url,
                     description=description,
                     highlights=(start.description, end.description, route_type.replace("-", " ").title()),
                     difficulty=_difficulty_for_distance(distance_km, pace),
@@ -140,6 +178,14 @@ def generate_routes(
             if score is None:
                 continue
 
+            via_point = _point(other)
+            map_url, directions_url = _route_urls(
+                start_point,
+                start_point,
+                route_type="loop",
+                via=via_point,
+            )
+
             route = GeneratedRoute(
                 id=f"{start.id}-{other.id}-loop",
                 name=f"{start.name} loop via {other.name}",
@@ -148,6 +194,9 @@ def generate_routes(
                 route_type="loop",
                 start=start_point,
                 end=start_point,
+                via=via_point,
+                map_url=map_url,
+                directions_url=directions_url,
                 description=f"A scenic loop starting at {start.name}, passing {other.name}, and returning.",
                 highlights=(start.description, other.description, "Loop"),
                 difficulty=_difficulty_for_distance(loop_km, pace),
