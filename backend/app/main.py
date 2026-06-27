@@ -47,6 +47,7 @@ class RouteResponse(BaseModel):
     end: RoutePointResponse
     via: RoutePointResponse | None = None
     map_url: str
+    embed_url: str
     directions_url: str
     description: str
     highlights: list[str]
@@ -82,6 +83,7 @@ def _serialize_route(route: GeneratedRoute) -> RouteResponse:
         end=_serialize_point(route.end),
         via=_serialize_point(route.via) if route.via else None,
         map_url=route.map_url,
+        embed_url=route.embed_url,
         directions_url=route.directions_url,
         description=route.description,
         highlights=list(route.highlights),

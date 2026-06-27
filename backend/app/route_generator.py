@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from app.google_maps import location_photo_url, route_directions_url, route_map_url
+from app.google_maps import place_photo_url, route_directions_url, route_embed_url, route_map_url
 from app.locations import Location, locations_for_region
 
 ROAD_FACTOR = 1.35
@@ -52,7 +52,7 @@ def _point(location: Location) -> RoutePoint:
         name=location.name,
         lat=location.lat,
         lng=location.lng,
-        photo_url=location_photo_url(location.lat, location.lng),
+        photo_url=place_photo_url(location.name, location.lat, location.lng),
     )
 
 
@@ -83,11 +83,20 @@ def _route_urls(
     *,
     route_type: str,
     via: RoutePoint | None = None,
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     via_lat = via.lat if via else None
     via_lng = via.lng if via else None
     return (
         route_map_url(start.lat, start.lng, end.lat, end.lng, route_type=route_type, via_lat=via_lat, via_lng=via_lng),
+        route_embed_url(
+            start.lat,
+            start.lng,
+            end.lat,
+            end.lng,
+            route_type=route_type,
+            via_lat=via_lat,
+            via_lng=via_lng,
+        ),
         route_directions_url(
             start.lat,
             start.lng,
@@ -144,7 +153,7 @@ def generate_routes(
                 if score is None:
                     continue
 
-                map_url, directions_url = _route_urls(
+                map_url, embed_url, directions_url = _route_urls(
                     start_point,
                     end_point if route_type == "point-to-point" else start_point,
                     route_type=route_type,
@@ -161,6 +170,7 @@ def generate_routes(
                     end=end_point if route_type == "point-to-point" else start_point,
                     via=via_point,
                     map_url=map_url,
+                    embed_url=embed_url,
                     directions_url=directions_url,
                     description=description,
                     highlights=(start.description, end.description, route_type.replace("-", " ").title()),
@@ -179,7 +189,7 @@ def generate_routes(
                 continue
 
             via_point = _point(other)
-            map_url, directions_url = _route_urls(
+            map_url, embed_url, directions_url = _route_urls(
                 start_point,
                 start_point,
                 route_type="loop",
@@ -196,6 +206,7 @@ def generate_routes(
                 end=start_point,
                 via=via_point,
                 map_url=map_url,
+                embed_url=embed_url,
                 directions_url=directions_url,
                 description=f"A scenic loop starting at {start.name}, passing {other.name}, and returning.",
                 highlights=(start.description, other.description, "Loop"),

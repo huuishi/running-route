@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from urllib.parse import urlencode
 
 import httpx
@@ -15,6 +16,56 @@ def _google_api_key() -> str | None:
 
 def _midpoint(lat1: float, lng1: float, lat2: float, lng2: float) -> tuple[float, float]:
     return ((lat1 + lat2) / 2, (lng1 + lng2) / 2)
+
+
+@lru_cache(maxsize=128)
+def _place_photo_reference(name: str, lat: float, lng: float) -> str | None:
+    api_key = _google_api_key()
+    if not api_key:
+        return None
+
+    params = {
+        "input": name,
+        "inputtype": "textquery",
+        "fields": "photos,place_id,name",
+        "locationbias": f"point:{lat},{lng}",
+        "key": api_key,
+    }
+    url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?{urlencode(params)}"
+    try:
+        response = httpx.get(url, timeout=6.0)
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates") or []
+        if not candidates:
+            return None
+        photos = candidates[0].get("photos") or []
+        if not photos:
+            return None
+        return photos[0].get("photo_reference")
+    except httpx.HTTPError:
+        return None
+
+
+def place_photo_url(name: str, lat: float, lng: float) -> str:
+    api_key = _google_api_key()
+    if api_key:
+        photo_reference = _place_photo_reference(name, lat, lng)
+        if photo_reference:
+            params = {
+                "maxwidth": "1200",
+                "photo_reference": photo_reference,
+                "key": api_key,
+            }
+            return f"https://maps.googleapis.com/maps/api/place/photo?{urlencode(params)}"
+
+    params = {
+        "center": f"{lat},{lng}",
+        "zoom": "15",
+        "size": "400x300",
+        "markers": f"{lat},{lng},red",
+    }
+    return f"https://staticmap.openstreetmap.de/staticmap.php?{urlencode(params)}"
 
 
 def static_map_url(lat: float, lng: float, *, label: str = "") -> str:
@@ -90,6 +141,41 @@ def route_map_url(
     if via_lat is not None and via_lng is not None:
         params["markers"] += f"|{via_lat},{via_lng},gold"
     return f"https://staticmap.openstreetmap.de/staticmap.php?{urlencode(params)}"
+
+
+def route_embed_url(
+    start_lat: float,
+    start_lng: float,
+    end_lat: float,
+    end_lng: float,
+    *,
+    route_type: str,
+    via_lat: float | None = None,
+    via_lng: float | None = None,
+) -> str:
+    api_key = _google_api_key()
+    if api_key:
+        params: dict[str, str] = {
+            "key": api_key,
+            "origin": f"{start_lat},{start_lng}",
+            "destination": f"{end_lat},{end_lng}",
+            "mode": "walking",
+        }
+        if via_lat is not None and via_lng is not None:
+            params["waypoints"] = f"{via_lat},{via_lng}"
+        elif route_type != "point-to-point":
+            params["waypoints"] = f"{end_lat},{end_lng}"
+        return f"https://www.google.com/maps/embed/v1/directions?{urlencode(params)}"
+
+    return route_map_url(
+        start_lat,
+        start_lng,
+        end_lat,
+        end_lng,
+        route_type=route_type,
+        via_lat=via_lat,
+        via_lng=via_lng,
+    )
 
 
 def route_directions_url(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { searchRoutes } from './routeSearch.js'
 import { supabase } from './supabaseClient.js'
@@ -65,7 +65,6 @@ function App() {
   const [recommendations, setRecommendations] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [selectedRouteId, setSelectedRouteId] = useState('')
   const [currentRun, setCurrentRun] = useState(null)
   const [trackerNotice, setTrackerNotice] = useState('')
   const [trackerError, setTrackerError] = useState('')
@@ -81,23 +80,6 @@ function App() {
   const startTimeRef = useRef(null)
   const furthestFromStartRef = useRef(0)
   const latestRouteRef = useRef(null)
-
-  const selectedRoute = useMemo(() => {
-    if (!recommendations.length) {
-      return null
-    }
-    return recommendations.find((route) => route.id === selectedRouteId) ?? recommendations[0]
-  }, [recommendations, selectedRouteId])
-
-  useEffect(() => {
-    if (!recommendations.length) {
-      setSelectedRouteId('')
-      return
-    }
-    if (!recommendations.some((route) => route.id === selectedRouteId)) {
-      setSelectedRouteId(recommendations[0].id)
-    }
-  }, [recommendations, selectedRouteId])
 
   useEffect(() => {
     if (!supabase) {
@@ -206,7 +188,6 @@ function App() {
     setSaveNotice('')
     setTrackerError('')
     setTrackerNotice(`Tracking ${route.name}…`)
-    setSelectedRouteId(route.id)
 
     const startedAt = Date.now()
     startTimeRef.current = startedAt
@@ -380,6 +361,10 @@ function App() {
     setSession(null)
   }
 
+  const openRouteMap = (route) => {
+    window.open(route.directions_url, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div className="app-shell">
       <header className="hero-card">
@@ -491,58 +476,80 @@ function App() {
         {error ? <p className="error-text">{error}</p> : null}
       </form>
 
-      <section className="selected-route-panel">
+      <section className="results-section">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Selected route</p>
-            <h2>{selectedRoute ? selectedRoute.name : 'Choose a route'}</h2>
+            <p className="eyebrow">Best matches</p>
+            <h2>
+              Recommended routes for {appliedFilters.location === 'Any' ? 'Singapore' : appliedFilters.location}
+            </h2>
           </div>
-          {selectedRoute ? <span className="chip">{selectedRoute.distance_km} km</span> : null}
+          <div className="chip">
+            {appliedFilters.distance} km • {paceLabels[appliedFilters.pace]}
+          </div>
         </div>
 
-        {selectedRoute ? (
-          <div className="selected-route-grid">
-            <a className="map-link" href={selectedRoute.map_url} target="_blank" rel="noreferrer">
-              <img src={selectedRoute.map_url} alt={`Route map for ${selectedRoute.name}`} />
-              <span>Open literal map</span>
-            </a>
-
-            <div className="route-detail-card">
-              <div className="route-detail-top">
+        <div className="cards">
+          {recommendations.map((route) => (
+            <article className="route-card" key={route.id}>
+              <div className="route-card-header">
                 <div>
-                  <p className="eyebrow compact">Route preview</p>
-                  <p className="route-path">{routeSummary(selectedRoute)}</p>
+                  <button type="button" className="route-name-button" onClick={() => openRouteMap(route)}>
+                    {route.name}
+                  </button>
+                  <p>{routeSummary(route)}</p>
                 </div>
-                <span className="pill">{selectedRoute.route_type.replace('-', ' ')}</span>
+                <span className="pill">{route.distance_km} km</span>
               </div>
-              <p className="route-description">{selectedRoute.description}</p>
+
+              <div className="route-photos">
+                <figure>
+                  <img src={route.start.photo_url} alt={`Start: ${route.start.name}`} loading="lazy" />
+                  <figcaption>Start • {route.start.name}</figcaption>
+                </figure>
+                <figure>
+                  <img src={route.end.photo_url} alt={`End: ${route.end.name}`} loading="lazy" />
+                  <figcaption>End • {route.end.name}</figcaption>
+                </figure>
+              </div>
+
+              <p className="route-description">{route.description}</p>
               <ul className="route-meta">
                 <li>
+                  <strong>Route type</strong>
+                  <span>{route.route_type.replace('-', ' ')}</span>
+                </li>
+                <li>
                   <strong>Surface</strong>
-                  <span>{selectedRoute.surface}</span>
+                  <span>{route.surface}</span>
                 </li>
                 <li>
                   <strong>Difficulty</strong>
-                  <span>{selectedRoute.difficulty}</span>
+                  <span>{route.difficulty}</span>
                 </li>
                 <li>
                   <strong>Best for</strong>
-                  <span>{selectedRoute.best_for}</span>
+                  <span>{route.best_for}</span>
                 </li>
               </ul>
-              <div className="tracker-actions">
-                <button type="button" className="primary-button" onClick={() => startRoute(selectedRoute)} disabled={currentRun?.status === 'running'}>
+              <div className="highlights">
+                {route.highlights.map((highlight) => (
+                  <span className="tag" key={highlight}>
+                    {highlight}
+                  </span>
+                ))}
+              </div>
+              <div className="tracker-actions compact-actions">
+                <button type="button" className="secondary-button" onClick={() => openRouteMap(route)}>
+                  View map
+                </button>
+                <button type="button" className="secondary-button" onClick={() => startRoute(route)}>
                   Start Route
                 </button>
-                <a className="secondary-link" href={selectedRoute.directions_url} target="_blank" rel="noreferrer">
-                  View directions
-                </a>
               </div>
-            </div>
-          </div>
-        ) : (
-          <p className="helper-text">Select a recommended route to see the map and start tracking.</p>
-        )}
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="tracker-panel">
@@ -597,85 +604,6 @@ function App() {
           ) : (
             <span className="saved-note">{saveNotice || 'Start a route to begin tracking.'}</span>
           )}
-        </div>
-      </section>
-
-      <section className="results-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Best matches</p>
-            <h2>Recommended routes for {appliedFilters.location === 'Any' ? 'Singapore' : appliedFilters.location}</h2>
-          </div>
-          <div className="chip">
-            {appliedFilters.distance} km • {paceLabels[appliedFilters.pace]}
-          </div>
-        </div>
-
-        <div className="cards">
-          {recommendations.map((route) => (
-            <article className={`route-card ${selectedRoute?.id === route.id ? 'is-selected' : ''}`} key={route.id}>
-              <div className="route-card-header">
-                <div>
-                  <button type="button" className="route-name-button" onClick={() => setSelectedRouteId(route.id)}>
-                    {route.name}
-                  </button>
-                  <p>{routeSummary(route)}</p>
-                </div>
-                <span className="pill">{route.distance_km} km</span>
-              </div>
-
-              <a className="map-link" href={route.map_url} target="_blank" rel="noreferrer">
-                <img src={route.map_url} alt={`Map of ${route.name}`} />
-                <span>Open literal map</span>
-              </a>
-
-              <div className="route-photos">
-                <figure>
-                  <img src={route.start.photo_url} alt={`Start: ${route.start.name}`} loading="lazy" />
-                  <figcaption>Start • {route.start.name}</figcaption>
-                </figure>
-                <figure>
-                  <img src={route.end.photo_url} alt={`End: ${route.end.name}`} loading="lazy" />
-                  <figcaption>End • {route.end.name}</figcaption>
-                </figure>
-              </div>
-
-              <p className="route-description">{route.description}</p>
-              <ul className="route-meta">
-                <li>
-                  <strong>Route type</strong>
-                  <span>{route.route_type.replace('-', ' ')}</span>
-                </li>
-                <li>
-                  <strong>Surface</strong>
-                  <span>{route.surface}</span>
-                </li>
-                <li>
-                  <strong>Difficulty</strong>
-                  <span>{route.difficulty}</span>
-                </li>
-                <li>
-                  <strong>Best for</strong>
-                  <span>{route.best_for}</span>
-                </li>
-              </ul>
-              <div className="highlights">
-                {route.highlights.map((highlight) => (
-                  <span className="tag" key={highlight}>
-                    {highlight}
-                  </span>
-                ))}
-              </div>
-              <div className="tracker-actions compact-actions">
-                <button type="button" className="secondary-button" onClick={() => setSelectedRouteId(route.id)}>
-                  View map
-                </button>
-                <button type="button" className="secondary-button" onClick={() => startRoute(route)}>
-                  Start Route
-                </button>
-              </div>
-            </article>
-          ))}
         </div>
       </section>
 

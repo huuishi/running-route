@@ -57,6 +57,19 @@ function mapUrl(start, end, routeType, via) {
   return `https://staticmap.openstreetmap.de/staticmap.php?${params.toString()}`
 }
 
+function embedUrl(start, end, routeType, via) {
+  const params = new URLSearchParams({
+    api: '1',
+    origin: `${start.lat},${start.lng}`,
+    destination: `${end.lat},${end.lng}`,
+    travelmode: 'walking',
+  })
+  if (via) {
+    params.set('waypoints', `${via.lat},${via.lng}`)
+  }
+  return `https://www.google.com/maps/embed/v1/directions?${params.toString()}`
+}
+
 function directionsUrl(start, end, via) {
   const params = new URLSearchParams({
     api: '1',
@@ -162,6 +175,7 @@ export function generateRoutesLocally(region, targetKm, pace = 'steady', limit =
             end: startEnd,
             via: viaPoint,
             map_url: mapUrl(startPoint, startEnd, routeType, viaPoint),
+            embed_url: embedUrl(startPoint, startEnd, routeType, viaPoint),
             directions_url: directionsUrl(startPoint, startEnd, viaPoint),
             description,
             highlights: [start.description, end.description, routeType.replace('-', ' ')],
@@ -188,6 +202,7 @@ export function generateRoutesLocally(region, targetKm, pace = 'steady', limit =
             end: startPoint,
             via: viaPoint,
             map_url: mapUrl(startPoint, startPoint, 'loop', viaPoint),
+            embed_url: embedUrl(startPoint, startPoint, 'loop', viaPoint),
             directions_url: directionsUrl(startPoint, startPoint, viaPoint),
             description: `A scenic loop starting at ${start.name}, passing ${end.name}, and returning.`,
             highlights: [start.description, end.description, 'Loop'],

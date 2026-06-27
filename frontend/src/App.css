@@ -246,6 +246,19 @@
   color: inherit;
 }
 
+.map-frame-wrap {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  background: #eef8f1;
+}
+
+.map-frame-wrap iframe {
+  width: 100%;
+  min-height: 320px;
+  border: 0;
+}
+
 .map-link img {
   display: block;
   width: 100%;
