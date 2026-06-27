@@ -136,7 +136,7 @@ function App() {
         {photoSource ? (
           <p className="photo-source">
             {photoSource === 'google-maps'
-              ? 'Start/end photos from Google Maps.'
+              ? 'Photos from Google Maps.'
               : 'Map previews shown while Google Maps API is unavailable.'}
           </p>
         ) : null}
